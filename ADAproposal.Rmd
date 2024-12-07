@@ -1,35 +1,44 @@
 ---
-title: "Untitled"
-author: "Sulaiti"
+title: "Ada Proposal R Code"
+author: "Sulaiti Mutebi"
 date: "2024-10-18"
 output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Look at how stigma is greater than the mean (stigma \>= mean)
 
-# Look at how stigma is greater than the mean (stigma >= mean)
 # Sample size being small thus becoming a limitation
+
 # Mean of the total stigma (continous variable) and depression (categorical yes/no)
+
 # Total stigma as the continuous variable
+
 # Test for the assumption
+
 # See the difference in the box plot
 
 # Variables of interest:
 
-#1.	AGE: (1=50-54, 2=55-59, 3=60+)
-#2.	SEX: (1=Female, 2= Male)
-#3.	ETHNICS: (0=White, 1= Non-White)
+#1. AGE: (1=50-54, 2=55-59, 3=60+) 
 
-#Stigma (1= mean <=, 2= mean >=)~independent variable
-#Depression (1=yes, 0=no)~dependent varaiable
+#2. SEX: (1=Female, 2= Male) 
 
+#3.ETHNICS: (0=White, 1= Non-White)
 
-# Summary of dataset to check the variables
-summary(df)
+#4.TOTSTIG (stigma)
 
+#5.TOTCESD(depression)
+
+#Stigma (1= mean \<=, 2= mean \>=)\~independent variable 
+
+#Depression (1=yes, 0=no)\~dependent varaiable
 
 
 ```{r}
@@ -37,61 +46,276 @@ summary(df)
 # Load necessary libraries
 library(dplyr)
 library(ggplot2)
-pacman::p_load(dplyr, readr)
-
+pacman::p_load(ggplot2, car, odds.n.ends, readr, dplyr)
+library(table1)
+suppressWarnings(library(table1))
+library(gmodels)
 ```
-
 
 ```{r}
 
 # loading the dataset
 
-ProposalDataset<-read_csv("33242-0001-Data.rda")
+load("33242-0001-Data.rda") # Ensure the .rda file is in the working directory
+ProposalDataset <- da33242.0001
+
+# Summary of dataset to check the variables
+summary(ProposalDataset)
+
+```
+#### Select variables of interest and renaming them
+
+``````{r}
+# Select variables of interest and rename them
+Dataset <- ProposalDataset %>%
+  select(AGE, SEX, ETHNIC2, TOTSTIG, TOTCESD) %>%
+  rename(
+    age_category = AGE,
+    sex = SEX,
+    race = ETHNIC2,
+    stigma = TOTSTIG,
+    depression = TOTCESD
+
+  )
+```
+  
+#### Data management for the analysis
+ 
+```{r}
+# Reclassify depression into binary categories
+Dataset <- Dataset %>%
+  mutate(
+    depression_binary = case_when(
+      depression >= 0 & depression < 16 ~ 0, # Not Depressed
+      depression >= 16 ~ 1                # Depressed
+    )
+  )
+
+# Convert depression_binary to a factor
+Dataset$depression_binary <- factor(
+  Dataset$depression_binary,
+  levels = c(0, 1),
+  labels = c("No", "Yes")
+)
+```
+ 
+#### Recoding and Factoring Other Variables
+```{r}
+# Recode and factor variables
+Dataset <- Dataset %>%
+  mutate(
+    age_category = factor(age_category, levels = 1:3, labels = c("50-54 years old", "55-59 years old", "60+ years")),
+    sex = factor(sex, levels = 1:2, labels = c("Female", "Male")),
+    race = factor(race, levels = 0:1, labels = c("White", "Non-White"))
+  )
+```
+
+### Data Verification
+```{r}
+# Check the structure and summary of the Dataset
+str(Dataset)
+summary(Dataset)
+
+# Cross-tabulation of the depression_binary variable
+table(Dataset$depression_binary, useNA = "always")
+```
+
+### Visualization: Boxplot of Stigma by Depression Status
+
+```{r}
+# Boxplot of stigma by depression status
+ggplot(Dataset, aes(x = depression_binary, y = stigma, fill = depression_binary)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Stigma by Depression Status",
+    x = "Depression Status (Yes/No)",
+    y = "Total Stigma Score"
+  ) +
+  theme_minimal()
+```
+
+### Drawing my dag diagram
+
+```{r}
+library(dagitty)
+
+dg <- dagitty('
+  dag {
+    
+    race-> stigma
+    Sex -> depression_binary
+    Sex -> stigma
+   age -> depression_binary
+   stigma -> depression_binary
+    
+  }
+')
+
+# Plot the DAG
+plot(dg)
 
 ```
 
-# Convert categorical variables to factors if they are not already
-df$sex <- as.factor(df$sex)
-df$race <- as.factor(df$race)
-df$hiv_stigma <- as.factor(df$hiv_stigma)
-df$depression <- as.factor(df$depression)
+### Running a univariate logistic regression model for stigma and ORs and 95% CIs.
 
-# Fit logistic regression model
-logit_model <- glm(depression ~ hiv_stigma + age + sex + race, 
-                   data = df, family = "binomial")
+```{r}
+
+# A univariate logistic regression model
+model <- glm(depression_binary ~ stigma, 
+             data = Dataset, 
+             family = binomial)
 
 # Summary of the model
-summary(logit_model)
+summary(model)
 
-# Odds ratios and confidence intervals
-exp(coef(logit_model))  # Exponentiated coefficients to get odds ratios
-confint(logit_model)    # Confidence intervals for coefficients
+odds.n.ends(model)
 
-# Model diagnostics: check multicollinearity using Variance Inflation Factor (VIF)
-library(car)
-vif(logit_model)  # VIF values; VIF > 5 indicates potential multicollinearity
+```
 
-# Hosmer-Lemeshow test for goodness-of-fit
-library(ResourceSelection)
-hoslem.test(df$depression, fitted(logit_model))
+### Table1 not stratified
 
-# Optional: Check interaction effect between HIV stigma and race
-logit_model_interaction <- glm(depression ~ hiv_stigma * race + age + sex, 
-                               data = df, family = "binomial")
-summary(logit_model_interaction)
+```{r}
 
-# Compare the two models (with and without interaction)
-anova(logit_model, logit_model_interaction, test = "Chisq")
+table1(~ age_category+sex+race+stigma+depression_binary,data = Dataset)
 
-# Visualize the results (optional)
-# Plot of predicted probabilities of depression by HIV stigma
-df$predicted_prob <- predict(logit_model, type = "response")
+```
 
-ggplot(df, aes(x = hiv_stigma, y = predicted_prob)) +
-  geom_boxplot() +
-  labs(title = "Predicted Probability of Depression by HIV Stigma",
-       x = "HIV Stigma",
-       y = "Predicted Probability of Depression")
+### Table one stratified by stigma
+
+```{r}
+#creating table 1 and data summary
+table1(~ age_category+sex+race+depression_binary|stigma,data = Dataset)
+
+```
+
+### Table one stratified by depression
+
+```{r}
+#creating table 1 and data summary
+table1(~ age_category+sex+race+stigma|depression_binary,data = Dataset)
+
+```
+
+### Running a multivariate logistic regression model that includes stigma, age_category,race, and sex in the model as covariates. 
+
+```{r}
+model1 <- glm(depression_binary ~ age_category+sex+race+stigma, data = Dataset, family = binomial)
+family = binomial(link = "logit")
+
+summary(model1)
+
+odds.n.ends(model)
+```
+
+### fiting my model using broom tidy to get estimates
+
+```{r}
+
+# Calculate Odds Ratios (OR) and 95% Confidence Intervals (CI)
+broom::tidy(model1, exponentiate = TRUE, conf.int = TRUE)
+```
+
+### Model diagnostics: check multicollinearity using Variance Inflation Factor (VIF)
+
+```{r}
+car::vif(model1)
+```
+
+### Check interaction effect between HIV stigma and race
+
+```{r}
+
+# Fit a model with interaction term
+model_interaction <- glm(depression_binary ~ stigma * race, 
+                         data = Dataset, 
+                         family = binomial)
+
+# Summary of the interaction model
+summary(model_interaction)
+
+```
+
+### Check interaction effect between HIV stigma and age_category
+
+```{r}
+
+# Fit a model with interaction term
+model_interaction1 <- glm(depression_binary ~ stigma * age_category, 
+                         data = Dataset, 
+                         family = binomial)
+
+# Summary of the interaction model
+summary(model_interaction1)
+
+
+```
+
+### Check interaction effect between HIV stigma and sex
+
+```{r}
+
+# Fit a model with interaction term
+model_interaction2 <- glm(depression_binary ~ stigma * sex, 
+                         data = Dataset, 
+                         family = binomial)
+
+# Summary of the interaction model
+summary(model_interaction2)
+
+
+```
+
+### Compare the models (with and without interactions)
+
+```{r}
+
+# Compare models using ANOVA
+anova(model, model_interaction,model_interaction1,model_interaction2, test = "Chisq")
+
+```
+
+### Visualize the results-predicted probabilities
+
+```{r}
+
+# Generate predicted probabilities
+Dataset$predicted_probs <- predict(model, type = "response")
+
+# Plot predicted probabilities by stigma
+ggplot(Dataset, aes(x = stigma, y = predicted_probs, color = depression_binary)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(
+    title = "Predicted Probabilities of Depression by Stigma",
+    x = "Total Stigma Score",
+    y = "Predicted Probability of Depression"
+  ) +
+  theme_minimal()
+
+
+```
+
+### Visualize the results-interaction effect
+
+```{r}
+# Visualize interaction effect
+ggplot(Dataset, aes(x = stigma, y = predicted_probs, color = race)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE) +
+  facet_wrap(~ depression_binary) +
+  labs(
+    title = "Interaction Between Stigma and Race on Depression",
+    x = "Total Stigma Score",
+    y = "Predicted Probability of Depression"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+
+
 
 
 
