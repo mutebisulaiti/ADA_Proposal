@@ -1,0 +1,97 @@
+---
+title: "Untitled"
+author: "Sulaiti"
+date: "2024-10-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Look at how stigma is greater than the mean (stigma >= mean)
+# Sample size being small thus becoming a limitation
+# Mean of the total stigma (continous variable) and depression (categorical yes/no)
+# Total stigma as the continuous variable
+# Test for the assumption
+# See the difference in the box plot
+
+# Variables of interest:
+
+#1.	AGE: (1=50-54, 2=55-59, 3=60+)
+#2.	SEX: (1=Female, 2= Male)
+#3.	ETHNICS: (0=White, 1= Non-White)
+
+#Stigma (1= mean <=, 2= mean >=)~independent variable
+#Depression (1=yes, 0=no)~dependent varaiable
+
+
+# Summary of dataset to check the variables
+summary(df)
+
+
+
+```{r}
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+pacman::p_load(dplyr, readr)
+
+```
+
+
+```{r}
+
+# loading the dataset
+
+ProposalDataset<-read_csv("33242-0001-Data.rda")
+
+```
+
+# Convert categorical variables to factors if they are not already
+df$sex <- as.factor(df$sex)
+df$race <- as.factor(df$race)
+df$hiv_stigma <- as.factor(df$hiv_stigma)
+df$depression <- as.factor(df$depression)
+
+# Fit logistic regression model
+logit_model <- glm(depression ~ hiv_stigma + age + sex + race, 
+                   data = df, family = "binomial")
+
+# Summary of the model
+summary(logit_model)
+
+# Odds ratios and confidence intervals
+exp(coef(logit_model))  # Exponentiated coefficients to get odds ratios
+confint(logit_model)    # Confidence intervals for coefficients
+
+# Model diagnostics: check multicollinearity using Variance Inflation Factor (VIF)
+library(car)
+vif(logit_model)  # VIF values; VIF > 5 indicates potential multicollinearity
+
+# Hosmer-Lemeshow test for goodness-of-fit
+library(ResourceSelection)
+hoslem.test(df$depression, fitted(logit_model))
+
+# Optional: Check interaction effect between HIV stigma and race
+logit_model_interaction <- glm(depression ~ hiv_stigma * race + age + sex, 
+                               data = df, family = "binomial")
+summary(logit_model_interaction)
+
+# Compare the two models (with and without interaction)
+anova(logit_model, logit_model_interaction, test = "Chisq")
+
+# Visualize the results (optional)
+# Plot of predicted probabilities of depression by HIV stigma
+df$predicted_prob <- predict(logit_model, type = "response")
+
+ggplot(df, aes(x = hiv_stigma, y = predicted_prob)) +
+  geom_boxplot() +
+  labs(title = "Predicted Probability of Depression by HIV Stigma",
+       x = "HIV Stigma",
+       y = "Predicted Probability of Depression")
+
+
+
