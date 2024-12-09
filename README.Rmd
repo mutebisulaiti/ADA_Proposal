@@ -1,30 +1,52 @@
----
-title: "README"
-author: "Sulaiti"
-date: "2024-12-08"
-output: html_document
----
+README: Research Project on HIV-Related Stigma and Depression in Older Adults
+Project Title: Association Between HIV-Related Stigma and Depression in Adults Aged 50 and Older: A Study in the Pacific Northwest (2003-2005)
+Purpose of the Study
+This project investigates the relationship between HIV-related stigma and depression among adults aged 50 and older in the Pacific Northwest. It aims to:
+1.	Assess whether higher levels of stigma are associated with increased odds of depression.
+2.	Examine how demographic factors such as age, sex, and race influence this relationship.
+Data Source
+The study utilizes secondary data from the University of Washington-Tacoma ICPSR dataset 33242, which includes information on stigma, depression, and demographic variables for individuals aged 50 and older from the Pacific Northwest between 2003 and 2005.
+Dataset Information
+•	Sample Size: 25 participants.
+•	Key Variables: 
+o	Dependent Variable: Depression (binary: Depressed vs. Not Depressed).
+o	Independent Variable: HIV-related stigma (continuous).
+o	Covariates: Age, sex, and race.
+Methods
+1.	Data Preparation:
+o	Cleaned and recoded depression into binary categories for analysis.
+o	Addressed missing data and ensured reproducibility by documenting all steps in R scripts.
+2.	Statistical Analysis:
+o	Conducted logistic regression to evaluate the association between stigma and depression.
+o	Univariate and multivariate models were used to control for demographic covariates.
+o	Assessed model fit, multicollinearity, and performance metrics.
+Key Findings
+1.	Univariate Analysis:
+o	Higher stigma was significantly associated with increased odds of depression (OR: 1.12, 95% CI: 1.04–1.26, p = 0.0143).
+2.	Multivariate Analysis:
+o	The association remained positive (OR: 1.11, 95% CI: 1.02–1.36) but was not statistically significant (p = 0.105) after adjusting for age, sex, and race.
+3.	Group Comparisons:
+o	Depression was more common among males, Non-White participants, and those aged 50-54 years.
+Outputs
+1.	Table 1: Baseline characteristics stratified by depression status.
+2.	Logistic Regression Results: Odds ratios and confidence intervals for univariate and multivariate models.
+3.	Visualization: Scatter plots and bar charts highlighting key findings.
+Reproducibility
+1.	Software:
+o	R version 4.2.0.
+2.	Scripts:
+o	All analysis scripts are saved in the scripts/ directory.
+3.	File Structure:
+o	scripts/: Contains R scripts for data cleaning and analysis.
+o	docs/: Documentation files, including this README.
+4.	Sharing:
+o	Scripts and outputs are shared on [GitHub repository link].
+Usage Notes
+•	Ensure proper citation of the dataset and this research when using any outputs.
+•	All steps and analyses are documented for full reproducibility.
+Contact Information
+For questions or further details, contact:
+Sulaiti Mutebi
+m.sulaiti@wustl.edu
+Washington University in St. Louis
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
