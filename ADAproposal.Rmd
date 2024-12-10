@@ -2,9 +2,11 @@
 title: "Ada Proposal R Code"
 author: "Sulaiti Mutebi"
 date: "2024-10-18"
-output: html_document
-editor_options: 
-  markdown: 
+output:
+  html_document: default
+  word_document: default
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -12,23 +14,19 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Look at how stigma is greater than the mean (stigma \>= mean)
+#Sample size being small thus becoming a limitation
 
-# Sample size being small thus becoming a limitation
+#Total stigma as the continuous variable
 
-# Mean of the total stigma (continous variable) and depression (categorical yes/no)
+#Test for the assumption
 
-# Total stigma as the continuous variable
+#See the difference in the box plot
 
-# Test for the assumption
+#Variables of interest:
 
-# See the difference in the box plot
+#1. AGE: (1=50-54, 2=55-59, 3=60+)
 
-# Variables of interest:
-
-#1. AGE: (1=50-54, 2=55-59, 3=60+) 
-
-#2. SEX: (1=Female, 2= Male) 
+#2. SEX: (1=Female, 2= Male)
 
 #3.ETHNICS: (0=White, 1= Non-White)
 
@@ -36,10 +34,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #5.TOTCESD(depression)
 
-#Stigma (1= mean \<=, 2= mean \>=)\~independent variable 
+#Stigma (continuous)\~independent variable
 
 #Depression (1=yes, 0=no)\~dependent varaiable
-
 
 ```{r}
 
@@ -63,9 +60,10 @@ ProposalDataset <- da33242.0001
 summary(ProposalDataset)
 
 ```
+
 #### Select variables of interest and renaming them
 
-``````{r}
+```{r}
 # Select variables of interest and rename them
 Dataset <- ProposalDataset %>%
   select(AGE, SEX, ETHNIC2, TOTSTIG, TOTCESD) %>%
@@ -78,9 +76,9 @@ Dataset <- ProposalDataset %>%
 
   )
 ```
-  
+
 #### Data management for the analysis
- 
+
 ```{r}
 # Reclassify depression into binary categories
 Dataset <- Dataset %>%
@@ -98,8 +96,9 @@ Dataset$depression_binary <- factor(
   labels = c("No", "Yes")
 )
 ```
- 
+
 #### Recoding and Factoring Other Variables
+
 ```{r}
 # Recode and factor variables
 Dataset <- Dataset %>%
@@ -111,6 +110,7 @@ Dataset <- Dataset %>%
 ```
 
 ### Data Verification
+
 ```{r}
 # Check the structure and summary of the Dataset
 str(Dataset)
@@ -196,7 +196,7 @@ table1(~ age_category+sex+race+stigma|depression_binary,data = Dataset)
 
 ```
 
-### Running a multivariate logistic regression model that includes stigma, age_category,race, and sex in the model as covariates. 
+### Running a multivariate logistic regression model that includes stigma, age_category,race, and sex in the model as covariates.
 
 ```{r}
 model1 <- glm(depression_binary ~ age_category+sex+race+stigma, data = Dataset, family = binomial)
@@ -311,11 +311,3 @@ ggplot(Dataset, aes(x = stigma, y = predicted_probs, color = race)) +
   theme_minimal()
 
 ```
-
-
-
-
-
-
-
-
