@@ -3,8 +3,8 @@ title: "Ada Proposal R Code"
 author: "Sulaiti Mutebi"
 date: "2024-10-18"
 output:
-  html_document: default
   word_document: default
+  html_document: default
 editor_options:
   markdown:
     wrap: 72
@@ -43,17 +43,19 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load necessary libraries
 library(dplyr)
 library(ggplot2)
-pacman::p_load(ggplot2, car, odds.n.ends, readr, dplyr)
+library(car)
+library(odds.n.ends)
+library(readr)
 library(table1)
-suppressWarnings(library(table1))
-library(gmodels)
+suppressWarnings(library(pacman))
+pacman::p_load(ggplot2, gmodels, broom)
 ```
 
 ```{r}
 
 # loading the dataset
 
-load("33242-0001-Data.rda") # Ensure the .rda file is in the working directory
+load("33242-0001-Data.rda") 
 ProposalDataset <- da33242.0001
 
 # Summary of dataset to check the variables
@@ -97,18 +99,6 @@ Dataset$depression_binary <- factor(
 )
 ```
 
-#### Recoding and Factoring Other Variables
-
-```{r}
-# Recode and factor variables
-Dataset <- Dataset %>%
-  mutate(
-    age_category = factor(age_category, levels = 1:3, labels = c("50-54 years old", "55-59 years old", "60+ years")),
-    sex = factor(sex, levels = 1:2, labels = c("Female", "Male")),
-    race = factor(race, levels = 0:1, labels = c("White", "Non-White"))
-  )
-```
-
 ### Data Verification
 
 ```{r}
@@ -133,6 +123,41 @@ ggplot(Dataset, aes(x = depression_binary, y = stigma, fill = depression_binary)
   ) +
   theme_minimal()
 ```
+
+### Linearity Assumption Test for Stigma
+
+```{r}
+
+# Fit a logistic regression model
+log_model <- glm(depression_binary ~ stigma, data = Dataset, family = binomial)
+
+# Create a binned residual plot to assess linearity
+Dataset <- Dataset %>%
+  mutate(stigma_bin = cut(stigma, breaks = 10))
+
+binned_means <- Dataset %>%
+  group_by(stigma_bin) %>%
+  summarize(mean_stigma = mean(stigma, na.rm = TRUE),
+            mean_residual = mean(residuals(log_model, type = "response"), na.rm = TRUE))
+
+# Plot residuals to check linearity
+ggplot(binned_means, aes(x = mean_stigma, y = mean_residual)) +
+  geom_point() +
+  geom_smooth(method = "loess") +
+  labs(
+    title = "Linearity Assumption Check",
+    x = "Mean Stigma (Binned)",
+    y = "Mean Residual"
+  ) +
+  theme_minimal()
+
+# Summary of findings:
+```
+
+#Interpretation of the linear assumption output 
+The flat line and near-zero residuals indicate that the linearity assumption for the
+stigma variable is satisfied in the logistic regression model. No
+evidence of non-linearity is observed.
 
 ### Drawing my dag diagram
 
@@ -170,6 +195,8 @@ summary(model)
 
 odds.n.ends(model)
 
+Dataset$stigma
+
 ```
 
 ### Table1 not stratified
@@ -205,6 +232,7 @@ family = binomial(link = "logit")
 summary(model1)
 
 odds.n.ends(model)
+
 ```
 
 ### fiting my model using broom tidy to get estimates
@@ -212,7 +240,7 @@ odds.n.ends(model)
 ```{r}
 
 # Calculate Odds Ratios (OR) and 95% Confidence Intervals (CI)
-broom::tidy(model1, exponentiate = TRUE, conf.int = TRUE)
+broom::tidy(model, exponentiate = TRUE, conf.int = TRUE)
 ```
 
 ### Model diagnostics: check multicollinearity using Variance Inflation Factor (VIF)
